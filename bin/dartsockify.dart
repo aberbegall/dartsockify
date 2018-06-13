@@ -29,7 +29,7 @@ Future main(List<String> args) async {
     }
   } catch (e) {
     print(
-        'websockify.js [-w web_dir] [-c cert.pem [-k key.pem]] source_port target_addr:target_port');
+        'dartsockify.js [-w web_dir] [-c cert.pem [-k key.pem]] source_port target_addr:target_port');
     exit(2);
   }
 

@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Dart",
-            "program": "bin/websockify.dart",
+            "program": "bin/dartsockify.dart",
             "request": "launch",
             "type": "dart",
             "args": [ "--web", "4980", "162.132.203.30:5900" ]
