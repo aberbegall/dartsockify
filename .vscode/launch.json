@@ -9,7 +9,7 @@
             "program": "bin/dartsockify.dart",
             "request": "launch",
             "type": "dart",
-            "args": [ "--web", "4980", "162.132.203.30:5900" ]
+            "args": [ "--web=localhost", "4980", "162.132.203.30:5900" ]
         }
     ]
 }

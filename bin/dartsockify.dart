@@ -3,39 +3,37 @@ import 'dart:async';
 
 import 'package:args/args.dart';
 
-ArgResults allArguments;
-
-int source_port;
-String target_host;
-int target_port;
-
 Future main(List<String> args) async {
+  int sourcePort;
+  String targetHost;
+  int targetPort;
   try {
-    final parser = new ArgParser();
+    const webOption = 'web';
+    final parser = new ArgParser()..addOption(webOption, abbr: 'w');
 
-    ArgResults allArguments = parser.parse(args);
-    List<String> arguments = allArguments.rest;
+    ArgResults argOptions = parser.parse(args);
+    List<String> arguments = argOptions.rest;
 
-    source_port = int.parse(arguments[0]);
-    target_host = arguments[1].split(':')[0];
-    target_port = int.parse(arguments[1].split(':')[1]);
+    sourcePort = int.parse(arguments[0]);
+    targetHost = arguments[1].split(':')[0];
+    targetPort = int.parse(arguments[1].split(':')[1]);
 
     print('WebSocket settings: ');
     print(
-        "    - proxying from localhost:$source_port to $target_host:$target_port");
+        "    - proxying from local port $sourcePort to target $targetHost:$targetPort");
 
-    if (allArguments['web']) {
-      print("    - Web server active. Serving: " + allArguments['web']);
+    String webHost = argOptions[webOption];
+    if (webHost.isNotEmpty) {
+      print("    - Web server active. Serving: $webHost");
     }
   } catch (e) {
     print(
-        'dartsockify.js [-w web_dir] [-c cert.pem [-k key.pem]] source_port target_addr:target_port');
+        'dartsockify.js [--web web_dir] [--cert cert.pem [--key key.pem]] source_port target_addr:target_port');
     exit(2);
   }
 
   print("Running in unencrypted HTTP (ws://) mode");
 
-  int sourcePort = 4981;
   var server;
   try {
     server = await HttpServer.bind(InternetAddress.anyIPv4, sourcePort);
