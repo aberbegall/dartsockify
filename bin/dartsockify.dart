@@ -54,10 +54,7 @@ Future main(List<String> args) async {
         ..usePrivateKey(keyPath);
       server = await HttpServer.bindSecure(
           InternetAddress.anyIPv4, sourcePort, secureContext);
-      print("    - Running in encrypted HTTPS (wss://) mode using: " +
-          certPath +
-          ", " +
-          keyPath);
+      print("    - Running in encrypted HTTPS (wss://) mode using: $certPath, $keyPath");
     } else {
       server = await HttpServer.bind(InternetAddress.anyIPv4, sourcePort);
       print("    - Running in unencrypted HTTP (ws://) mode");
