@@ -9,7 +9,9 @@
             "program": "bin/dartsockify.dart",
             "request": "launch",
             "type": "dart",
-            "args": [ "--web=localhost", "4980", "162.132.203.30:5900" ]
+            "args": [ "8590", "162.132.203.39:5900" ]
         }
     ]
 }
+
+//"args": [ "--web=c:\\temp\\novnc", "4980", "162.132.203.30:5900" ]
