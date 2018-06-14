@@ -9,7 +9,7 @@
             "program": "bin/dartsockify.dart",
             "request": "launch",
             "type": "dart",
-            "args": [ "--web=c:\\temp\\novnc", "4590", "127.0.0.1:5555" ]
+            "args": [ "--web=c:\\temp\\novnc", "--cert=crt.pem", "--key=key.pem", "5959", "127.0.0.1:5900" ]
         }
     ]
 }
