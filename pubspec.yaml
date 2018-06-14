@@ -1,0 +1,16 @@
+name: websockify
+description: A sample command-line application.
+# version: 1.0.0
+# homepage: https://www.example.com
+# author: berbegaa <email@example.com>
+
+environment:
+  sdk: '>=2.0.0-dev.52.0 <2.0.0'
+
+dependencies:
+  routes: "^0.1.4"
+  http_server: "^0.9.7"
+#  path: ^1.4.1
+
+dev_dependencies:
+  test: ^0.12.30

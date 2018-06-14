@@ -1,2 +1,5 @@
 # dartsockify
-A port of the websockify javascript to dart language
+A dart implementation of the websockify WebSocket-to-TCP bridge/proxy.
+
+# credits
+https://github.com/novnc/websockify
