@@ -34,7 +34,7 @@ Future main(List<String> args) async {
     keyPath = argOptions[keyOption];
   } catch (e) {
     print(
-        'dartsockify.js [--web web_dir] [--cert cert.pem [--key key.pem]] source_port target_addr:target_port');
+        'dartsockify.dart [--web web_dir] [--cert cert.pem [--key key.pem]] source_port target_addr:target_port');
     exit(2);
   }
 
