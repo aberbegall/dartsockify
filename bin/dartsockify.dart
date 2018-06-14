@@ -9,13 +9,12 @@ String targetHost;
 int targetPort;
 
 Future main(List<String> args) async {
-
   VirtualDirectory webDirectory;
   String webHost;
 
   try {
-    const webOption = 'web';
-    final parser = new ArgParser()..addOption(webOption, abbr: 'w');
+    const String webOption = 'web';
+    final ArgParser parser = new ArgParser()..addOption(webOption, abbr: 'w');
 
     ArgResults argOptions = parser.parse(args);
     List<String> arguments = argOptions.rest;
@@ -24,16 +23,16 @@ Future main(List<String> args) async {
     targetHost = arguments[1].split(':')[0];
     targetPort = int.parse(arguments[1].split(':')[1]);
     webHost = argOptions[webOption];
-
-    print('WebSocket settings: ');
-    print(
-        "    - proxying from local port $sourcePort to target $targetHost:$targetPort");
   } catch (e) {
     print(
         'dartsockify.js [--web web_dir] [--cert cert.pem [--key key.pem]] source_port target_addr:target_port');
     exit(2);
   }
-  
+
+  print('WebSocket settings: ');
+  print(
+      "    - proxying from local port $sourcePort to target $targetHost:$targetPort");
+
   if (webHost != null && webHost.isNotEmpty) {
     webDirectory = new VirtualDirectory(webHost);
     print("    - Web server active. Serving: $webHost");
@@ -42,7 +41,8 @@ Future main(List<String> args) async {
   print("Running in unencrypted HTTP (ws://) mode");
 
   try {
-    HttpServer server = await HttpServer.bind(InternetAddress.anyIPv4, sourcePort);
+    HttpServer server =
+        await HttpServer.bind(InternetAddress.anyIPv4, sourcePort);
     print('Listening on port ${server.port} for HTTP request ...');
 
     await for (HttpRequest request in server) {
@@ -70,38 +70,39 @@ Future main(List<String> args) async {
 
 Future serverWebSocketRequest(HttpRequest request) async {
   try {
-    if (request.uri.path.startsWith('/websockify')) {
-      request.response.headers.clear();
-      request.response.headers.set('Sec-WebSocket-Protocol', 'binary');
-      request.response.headers.set('Sec-WebSocket-Version', '13');
+    print('Serving websocket...');
+    request.response.headers.clear();
+    request.response.headers.set('Sec-WebSocket-Protocol', 'binary');
+    request.response.headers.set('Sec-WebSocket-Version', '13');
 
-      // Setup the web socket connection
-      WebSocket client;
+    // Setup the web socket connection
+    WebSocket client;
 
-      if (WebSocketTransformer.isUpgradeRequest(request)) {
-        client = await WebSocketTransformer.upgrade(request);
-      }
-
-      // Setup a new tcp socket connection
-      Socket target = await Socket.connect(targetHost, targetPort);
-
-      var clientStream = client.listen(
-          (data) => handleWebSocketData(data, target),
-          onDone: () => handleWebSocketDone(target),
-          onError: (error) => handleWebSocketError(error, target),
-          cancelOnError: true);
-
-      print('WebSocket connection...');
-      print('Protocol: $client.protocol');
-
-      var targetStream = target.listen(
-          (data) => handleSocketData(data, target, client),
-          onDone: () => handleSocketDone(client),
-          onError: (error) => handleSocketError(error, target, client),
-          cancelOnError: true);
-      
-      print('Socket connected to target: ${target.address.host}:$targetPort');
+    if (WebSocketTransformer.isUpgradeRequest(request)) {
+      client = await WebSocketTransformer.upgrade(request);
     }
+
+    // Setup a new tcp socket connection
+    Socket target = await Socket.connect(targetHost, targetPort);
+
+    // var clientStream = client.listen(
+    //     (data) => handleWebSocketData(data, target),
+    //     onDone: () => handleWebSocketDone(target),
+    //     onError: (error) => handleWebSocketError(error, target),
+    //     cancelOnError: true);
+
+    print('WebSocket connection...');
+    print('Protocol: $client.protocol');
+
+    // var targetStream = target.listen(
+    //     (data) => handleSocketData(data, target, client),
+    //     onDone: () => handleSocketDone(client),
+    //     onError: (error) => handleSocketError(error, target, client),
+    //     cancelOnError: true);
+
+    await client.addStream(target.asBroadcastStream());
+
+    print('Socket connected to target: ${target.address.host}:$targetPort');
   } catch (e) {
     print('Exception in handleWebRequest: $e');
   }
