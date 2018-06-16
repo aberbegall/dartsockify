@@ -4,9 +4,9 @@ import 'dart:async';
 import 'package:args/args.dart';
 import 'package:http_server/http_server.dart';
 
-String targetHost;
-int sourcePort;
-int targetPort;
+import '../lib/dto/socket_proxy.dart';
+
+SocketProxy proxy;
 
 Future main(List<String> args) async {
   VirtualDirectory webDirectory;
@@ -23,12 +23,14 @@ Future main(List<String> args) async {
       ..addOption(certOption, abbr: 'c')
       ..addOption(keyOption, abbr: 'k');
 
-    ArgResults argOptions = parser.parse(args);
-    List<String> arguments = argOptions.rest;
+    final argOptions = parser.parse(args);
+    final arguments = argOptions.rest;
 
-    sourcePort = int.parse(arguments[0]);
-    targetHost = arguments[1].split(':')[0];
-    targetPort = int.parse(arguments[1].split(':')[1]);
+    proxy = new SocketProxy(
+      int.parse(arguments[0]), 
+      arguments[1].split(':')[0], 
+      int.parse(arguments[1].split(':')[1]));
+
     webHost = argOptions[webOption];
     certPath = argOptions[certOption];
     keyPath = argOptions[keyOption];
@@ -40,40 +42,41 @@ Future main(List<String> args) async {
 
   print('WebSocket settings: ');
   print(
-      "    - proxying from local port $sourcePort to target $targetHost:$targetPort");
+      "    - proxying from local port ${proxy.sourcePort} to target ${proxy.targetHost}:${proxy.targetPort}");
 
-  if (webHost != null && webHost.isNotEmpty) {
+  if (webHost?.isNotEmpty == true) {
     webDirectory = new VirtualDirectory(webHost);
     print("    - Web server active. Serving: $webHost");
   }
+
   try {
     HttpServer server;
-    if (certPath != null && certPath.isNotEmpty) {
-      SecurityContext secureContext = new SecurityContext()
+    if (certPath?.isNotEmpty == true) {
+      final secureContext = new SecurityContext()
         ..useCertificateChain(certPath)
         ..usePrivateKey(keyPath);
       server = await HttpServer.bindSecure(
-          InternetAddress.anyIPv4, sourcePort, secureContext);
-      print("    - Running in encrypted HTTPS (wss://) mode using: $certPath, $keyPath");
+          InternetAddress.anyIPv4, proxy.sourcePort, secureContext);
+      print(
+          "    - Running in encrypted HTTPS (wss://) mode using: $certPath, $keyPath");
     } else {
-      server = await HttpServer.bind(InternetAddress.anyIPv4, sourcePort);
+      server = await HttpServer.bind(InternetAddress.anyIPv4, proxy.sourcePort);
       print("    - Running in unencrypted HTTP (ws://) mode");
     }
 
     print('    - Listening on port ${server.port} for HTTP request ...');
-
     await for (HttpRequest request in server) {
       request.response.headers.add('Access-Control-Allow-Origin', '*');
       request.response.headers.add('Access-Control-Allow-Headers',
           'Origin, X-Requested-With, Content-Type, Accept');
 
       if (request.uri.path.startsWith('/websockify')) {
-        await serverWebSocketRequest(request);
+        await serveWebSocketRequest(request);
       } else {
         if (webDirectory != null) {
           await webDirectory.serveRequest(request);
         } else {
-          request.response.statusCode = HttpStatus.FORBIDDEN;
+          request.response.statusCode = HttpStatus.forbidden;
           request.response.write('403 Permission Denied');
         }
         request.response.close();
@@ -85,7 +88,7 @@ Future main(List<String> args) async {
   }
 }
 
-Future serverWebSocketRequest(HttpRequest request) async {
+Future serveWebSocketRequest(HttpRequest request) async {
   try {
     print('Serving websocket...');
     request.response.headers.clear();
@@ -93,13 +96,11 @@ Future serverWebSocketRequest(HttpRequest request) async {
     request.response.headers.set('Sec-WebSocket-Version', '13');
 
     // Setup the web socket connection
-    WebSocket client;
-
     if (WebSocketTransformer.isUpgradeRequest(request)) {
-      client = await WebSocketTransformer.upgrade(request);
+      final WebSocket client = await WebSocketTransformer.upgrade(request);
 
       // Setup a new tcp socket connection
-      Socket target = await Socket.connect(targetHost, targetPort);
+      final Socket target = await Socket.connect(proxy.targetHost, proxy.targetPort);
 
       client.listen((data) => handleWebSocketData(data, target),
           onDone: () => handleWebSocketDone(target),
@@ -114,7 +115,7 @@ Future serverWebSocketRequest(HttpRequest request) async {
           onError: (error) => handleSocketError(error, target, client),
           cancelOnError: true);
 
-      print('Socket connected to target: ${target.address.host}:$targetPort');
+      print('Socket connected to target: ${target.address.host}:${proxy.targetPort}');
     }
   } catch (e) {
     print('Exception in handleWebRequest: $e');
