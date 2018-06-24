@@ -12,3 +12,8 @@ The api is very similar to the original websockify.js script
 
 ### missing websockify features 
 * Session recorder
+
+### license
+Copyright (C) 2013 - Joel Martin (github.com/kanaka)
+
+Licensed under LGPL-3.
